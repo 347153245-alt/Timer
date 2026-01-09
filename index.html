@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Shantou Toastmasters Timer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+      body {
+        font-family: 'Inter', sans-serif;
+      }
+      /* Toastmasters Brand Colors Customization for Tailwind */
+      :root {
+        --tm-navy: #004165;
+        --tm-burgundy: #772432;
+        --tm-yellow: #f2df74;
+        --tm-grey: #a9b7b1;
+      }
+    </style>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              tm: {
+                navy: '#004165',
+                burgundy: '#772432',
+                yellow: '#f2df74',
+                grey: '#a9b7b1',
+                'light-grey': '#f5f7f7',
+              }
+            }
+          }
+        }
+      }
+    </script>
+  <script type="importmap">
+{
+  "imports": {
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+    "react/": "https://esm.sh/react@^19.2.3/",
+    "react": "https://esm.sh/react@^19.2.3",
+    "recharts": "https://esm.sh/recharts@^3.6.0",
+    "lucide-react": "https://esm.sh/lucide-react@^0.562.0"
+  }
+}
+</script>
+</head>
+  <body class="bg-gray-50 text-slate-900 h-screen overflow-hidden">
+    <div id="root" class="h-full flex flex-col"></div>
+  </body>
+</html>
