@@ -1,7 +1,8 @@
-import React from 'react';
+
+import React, { useState } from 'react';
 import { AgendaItem, TimingStatus, RoleType } from '../types';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
-import { Download, RefreshCw, AlertTriangle, Clock } from 'lucide-react';
+import { Download, RefreshCw, AlertTriangle, Clock, Printer } from 'lucide-react';
 import { TM_COLORS } from '../constants';
 
 interface ReportViewProps {
@@ -9,10 +10,13 @@ interface ReportViewProps {
   onReset: () => void;
   scheduledStart: string;
   actualStart: string;
+  meetingNumber: string;
+  meetingTheme: string;
 }
 
-const ReportView: React.FC<ReportViewProps> = ({ items, onReset, scheduledStart, actualStart }) => {
-  
+const ReportView: React.FC<ReportViewProps> = ({ items, onReset, scheduledStart, actualStart, meetingNumber, meetingTheme }) => {
+  const [reportDate, setReportDate] = useState(new Date().toISOString().slice(0, 10));
+
   // --- Data Calculations ---
 
   // 1. Meeting Punctuality
@@ -36,7 +40,7 @@ const ReportView: React.FC<ReportViewProps> = ({ items, onReset, scheduledStart,
     }
   }
 
-  // 2. Session Statistics (Duration Based)
+  // 2. Session Statistics
   const calcSessionStats = (filterFn: (i: AgendaItem) => boolean) => {
       const sessionItems = items.filter(filterFn);
       const totalTargetSeconds = sessionItems.reduce((acc, i) => acc + (i.targetTimeMinutes * 60), 0);
@@ -54,9 +58,6 @@ const ReportView: React.FC<ReportViewProps> = ({ items, onReset, scheduledStart,
       };
   };
 
-  // Prepared Session: Prepared Speeches (Type=Speech) AND Evaluators (Name contains 'Evaluator' or inferred)
-  // Since we removed Type selector, we rely on the `type` property being set correctly in background or user toggling Speech icon.
-  // We also include Evaluators by name.
   const preparedFilter = (i: AgendaItem) => {
       if (i.status === TimingStatus.PENDING) return false;
       const isSpeech = i.type === RoleType.SPEECH;
@@ -64,16 +65,33 @@ const ReportView: React.FC<ReportViewProps> = ({ items, onReset, scheduledStart,
       return isSpeech || isEvaluator;
   };
 
-  const ttFilter = (i: AgendaItem) => {
-      if (i.status === TimingStatus.PENDING) return false;
-      // Includes specific TT type or name-based fallback
-      return i.type === RoleType.TABLE_TOPIC || i.roleName.toLowerCase().includes('table topic');
-  };
+  // Determine Table Topics Stats
+  const ttSessionItem = items.find(i => i.type === RoleType.SESSION);
+  let ttStats;
+
+  if (ttSessionItem && ttSessionItem.actualTimeSeconds > 0) {
+      const targetSec = ttSessionItem.targetTimeMinutes * 60;
+      const actualSec = ttSessionItem.actualTimeSeconds;
+      const diff = actualSec - targetSec;
+      
+      ttStats = {
+          count: 1,
+          targetSec,
+          actualSec,
+          status: ttSessionItem.status,
+          diff
+      };
+  } else {
+      const ttFallbackFilter = (i: AgendaItem) => {
+          if (i.status === TimingStatus.PENDING) return false;
+          return (i.type === RoleType.TABLE_TOPIC || (i.roleName.toLowerCase().includes('table topic') && i.type !== RoleType.SESSION));
+      };
+      ttStats = calcSessionStats(ttFallbackFilter);
+  }
 
   const preparedStats = calcSessionStats(preparedFilter);
-  const ttStats = calcSessionStats(ttFilter);
 
-  // 3. Overall On-Time Rate (Individual Qualification)
+  // 3. Overall On-Time Rate
   const completedItems = items.filter(i => i.status !== TimingStatus.PENDING);
   const overallQualified = completedItems.filter(i => i.status === TimingStatus.QUALIFIED).length;
   const overallRate = completedItems.length > 0 ? Math.round((overallQualified / completedItems.length) * 100) : 0;
@@ -86,34 +104,39 @@ const ReportView: React.FC<ReportViewProps> = ({ items, onReset, scheduledStart,
 
   // 4. Top Contributors to Lateness (Deviation)
   const deviationItems = completedItems
-    .filter(i => i.status !== TimingStatus.QUALIFIED)
+    .filter(i => i.status === TimingStatus.OVERTIME)
     .map(i => {
         const targetSeconds = i.targetTimeMinutes * 60;
         const diff = Math.abs(i.actualTimeSeconds - targetSeconds);
         return { ...i, deviation: diff };
     })
     .sort((a, b) => b.deviation - a.deviation)
-    .slice(0, 2);
+    .slice(0, 3);
 
 
   // --- Formatters ---
   const formatTime = (seconds: number) => {
-    const m = Math.floor(Math.abs(seconds) / 60);
-    const s = Math.abs(seconds) % 60;
+    const rounded = Math.round(seconds);
+    const m = Math.floor(Math.abs(rounded) / 60);
+    const s = Math.abs(rounded) % 60;
     return `${m}m ${s}s`;
   };
 
   const getStatusBadge = (status: TimingStatus) => {
     switch (status) {
         case TimingStatus.QUALIFIED:
-            return <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Qualified</span>;
+            return <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 print:bg-transparent print:text-black print:border print:border-green-800 print:px-1 print:py-0 print:text-[8px] print:leading-none">Qualified</span>;
         case TimingStatus.OVERTIME:
-            return <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">Overtime</span>;
+            return <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 print:bg-transparent print:text-black print:border print:border-red-800 print:px-1 print:py-0 print:text-[8px] print:leading-none">Overtime</span>;
         case TimingStatus.UNDERTIME:
-            return <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">Undertime</span>;
+            return <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 print:bg-transparent print:text-black print:border print:border-yellow-800 print:px-1 print:py-0 print:text-[8px] print:leading-none">Undertime</span>;
         default:
-            return <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">Pending</span>;
+            return <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 print:px-1 print:py-0 print:text-[8px] print:leading-none">Pending</span>;
     }
+  };
+
+  const handlePrint = () => {
+      window.print();
   };
 
   const downloadCSV = () => {
@@ -129,11 +152,13 @@ const ReportView: React.FC<ReportViewProps> = ({ items, onReset, scheduledStart,
     // Add Summary at bottom
     rows.push([]);
     rows.push(['--- SUMMARY ---']);
+    rows.push(['Club', 'Shantou Toastmasters']);
+    rows.push(['Date', reportDate]);
+    rows.push(['Meeting #', meetingNumber]);
+    rows.push(['Theme', meetingTheme]);
     rows.push(['Scheduled Start', scheduledStart]);
     rows.push(['Actual Start', actualStart]);
     rows.push(['Overall Qualification Rate', `${overallRate}%`]);
-    rows.push(['Prepared Session Variance', `${preparedStats.diff > 0 ? '+' : '-'}${formatTime(preparedStats.diff)}`]);
-    rows.push(['Table Topics Variance', `${ttStats.diff > 0 ? '+' : '-'}${formatTime(ttStats.diff)}`]);
 
     const csvContent = "data:text/csv;charset=utf-8," 
         + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
@@ -141,39 +166,78 @@ const ReportView: React.FC<ReportViewProps> = ({ items, onReset, scheduledStart,
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `TM_Report_${new Date().toISOString().slice(0,10)}.csv`);
+    link.setAttribute("download", `TM_Report_${reportDate}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
   };
 
   return (
-    <div className="max-w-7xl mx-auto w-full p-4 md:p-6 bg-white rounded-xl shadow-lg my-4 md:my-8 flex flex-col h-full overflow-hidden">
-      <div className="flex justify-between items-center mb-6 border-b pb-4">
-        <div>
-            <h2 className="text-2xl md:text-3xl font-bold text-tm-navy">Timer Report</h2>
-            <p className="text-gray-500">Shantou Toastmasters Meeting Summary</p>
+    <div className="relative max-w-7xl mx-auto w-full p-4 md:p-6 bg-white rounded-xl shadow-lg my-4 md:my-8 flex flex-col h-full overflow-hidden print:shadow-none print:p-0 print:m-0 print:h-auto print:overflow-visible print:w-full">
+      
+      {/* Decorative Elements */}
+      <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-tm-navy via-tm-burgundy to-tm-yellow print:h-1"></div>
+      <div className="absolute top-0 right-0 w-64 h-64 bg-tm-navy/5 rounded-bl-full -z-0 pointer-events-none print:hidden"></div>
+      <div className="absolute bottom-0 left-0 w-48 h-48 bg-tm-burgundy/5 rounded-tr-full -z-0 pointer-events-none print:hidden"></div>
+
+      {/* Report Header */}
+      <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-end mb-6 border-b pb-4 print:flex-row print:items-end print:mb-1 print:pb-1 print:border-gray-400">
+        <div className="w-full">
+            <div className="flex flex-col md:flex-row md:justify-between md:items-start mb-2 print:mb-0">
+                <h1 className="text-2xl font-extrabold text-tm-navy tracking-tight print:text-lg">
+                    汕头国际演讲俱乐部 <span className="text-tm-burgundy">Shantou Toastmasters</span>
+                </h1>
+                
+                <div className="flex items-center gap-2 mt-2 md:mt-0">
+                    <span className="text-sm font-semibold text-gray-400 uppercase tracking-wide print:text-[9px]">Date:</span>
+                    <input 
+                        type="date" 
+                        value={reportDate}
+                        onChange={(e) => setReportDate(e.target.value)}
+                        className="bg-transparent border-b border-gray-300 focus:border-tm-navy outline-none text-tm-navy font-mono font-bold text-sm text-right w-36 print:border-none print:w-auto print:text-right print:text-[10px] print:h-auto print:p-0"
+                    />
+                </div>
+            </div>
+
+            <div className="flex items-baseline gap-2 mb-1 print:mb-0">
+                <div className="text-sm font-bold text-tm-grey uppercase tracking-wider print:text-[9px]">
+                    Meeting #{meetingNumber || '---'}
+                </div>
+            </div>
+            
+            <h2 className="text-3xl font-bold text-tm-navy leading-tight print:text-base print:leading-tight">
+                {meetingTheme || 'Toastmasters Meeting'}
+            </h2>
+            <div className="text-gray-500 mt-1 print:text-[9px] italic print:mt-0">Official Timer Report</div>
         </div>
-        <div className="flex gap-2">
+
+        <div className="flex gap-2 print:hidden mt-4 md:mt-0 self-end">
+            <button 
+                onClick={handlePrint}
+                className="flex items-center gap-2 bg-gray-100 text-tm-navy px-3 py-2 rounded-lg hover:bg-gray-200 text-sm font-semibold transition-colors"
+            >
+                <Printer className="w-4 h-4" /> Print
+            </button>
              <button 
                 onClick={downloadCSV}
-                className="flex items-center gap-2 text-tm-navy border border-tm-navy px-3 py-2 rounded-lg hover:bg-tm-light-grey text-sm font-semibold"
+                className="flex items-center gap-2 text-tm-navy border border-tm-navy px-3 py-2 rounded-lg hover:bg-tm-light-grey text-sm font-semibold transition-colors"
             >
-                <Download className="w-4 h-4" /> <span className="hidden md:inline">Export CSV</span>
+                <Download className="w-4 h-4" /> Export
             </button>
             <button 
                 onClick={onReset}
-                className="flex items-center gap-2 bg-tm-navy text-white px-3 py-2 rounded-lg hover:bg-opacity-90 text-sm font-semibold"
+                className="flex items-center gap-2 bg-tm-navy text-white px-3 py-2 rounded-lg hover:bg-opacity-90 text-sm font-semibold transition-colors"
             >
-                <RefreshCw className="w-4 h-4" /> <span className="hidden md:inline">New</span>
+                <RefreshCw className="w-4 h-4" /> New
             </button>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 overflow-hidden flex-1 min-h-0">
+      <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-6 overflow-hidden flex-1 min-h-0 print:block print:overflow-visible print:h-auto">
         
-        {/* Left Stats Column */}
-        <div className="lg:col-span-4 flex flex-col gap-4 overflow-y-auto">
+        {/* Left Stats Column (Hidden on Print) */}
+        <div className="lg:col-span-4 flex flex-col gap-4 overflow-y-auto print:hidden">
+            {/* ... (Keep existing stats components) ... */}
             
             {/* Punctuality Card */}
             <div className="bg-slate-50 p-4 rounded-lg border border-slate-100">
@@ -184,8 +248,8 @@ const ReportView: React.FC<ReportViewProps> = ({ items, onReset, scheduledStart,
                     {punctualityStatus}
                 </div>
                 <div className="text-sm text-gray-500 flex justify-between">
-                    <span>Scheduled: {scheduledStart || '--:--'}</span>
-                    <span>Actual: {actualStart || '--:--'}</span>
+                    <span>Meeting Scheduled: {scheduledStart || '--:--'}</span>
+                    <span>Meeting Actual: {actualStart || '--:--'}</span>
                 </div>
             </div>
 
@@ -263,8 +327,8 @@ const ReportView: React.FC<ReportViewProps> = ({ items, onReset, scheduledStart,
                         {deviationItems.map((item, idx) => (
                             <li key={idx} className="bg-white p-2 rounded shadow-sm">
                                 <div className="flex justify-between items-start">
-                                    <span className="text-sm font-bold text-gray-800 truncate block max-w-[120px]">{item.speakerName || item.roleName}</span>
-                                    <span className="text-xs font-mono text-red-600 font-bold">
+                                    <span className="text-sm font-bold text-gray-800 truncate block">{item.roleName}</span>
+                                    <span className="text-xs font-mono text-red-600 font-bold whitespace-nowrap ml-2">
                                         Off by {formatTime(item.deviation)}
                                     </span>
                                 </div>
@@ -278,34 +342,42 @@ const ReportView: React.FC<ReportViewProps> = ({ items, onReset, scheduledStart,
             )}
         </div>
 
-        {/* Right Details Column */}
-        <div className="lg:col-span-8 overflow-y-auto pr-2">
-            <h3 className="text-lg font-semibold text-tm-navy mb-4">Detailed Results</h3>
-            <div className="bg-white border rounded-lg overflow-hidden">
-                <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
+        {/* Right Details Column (Expands on Print) */}
+        <div className="lg:col-span-8 overflow-y-auto pr-2 print:col-span-12 print:overflow-visible print:pr-0">
+            
+            {/* Print-only Stats Summary */}
+            <div className="hidden print:flex justify-between items-center mb-1 border border-gray-400 p-1 rounded text-[9px] bg-gray-50/50">
+                <div>Start: <b>{actualStart || 'N/A'}</b> (Sched: {scheduledStart})</div>
+                <div>Qualification: <b>{overallRate}%</b></div>
+                <div>{punctualityStatus}</div>
+            </div>
+
+            <h3 className="text-lg font-semibold text-tm-navy mb-4 print:hidden">Detailed Results</h3>
+            <div className="bg-white border rounded-lg overflow-hidden print:border-gray-400 print:rounded-none print:border-t print:border-l print:border-r">
+                <table className="min-w-full divide-y divide-gray-200 print:divide-gray-400">
+                    <thead className="bg-gray-50 print:bg-gray-200">
                         <tr>
-                            <th scope="col" className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Role / Speaker</th>
-                            <th scope="col" className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider hidden md:table-cell">Target</th>
-                            <th scope="col" className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Actual</th>
-                            <th scope="col" className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Status</th>
+                            <th scope="col" className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider print:text-black print:py-0.5 print:px-1 print:text-[9px] print:h-4">Role / Speaker</th>
+                            <th scope="col" className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider hidden md:table-cell print:table-cell print:text-black print:py-0.5 print:px-1 print:text-[9px]">Target</th>
+                            <th scope="col" className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider print:text-black print:py-0.5 print:px-1 print:text-[9px]">Actual</th>
+                            <th scope="col" className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider print:text-black print:py-0.5 print:px-1 print:text-[9px]">Status</th>
                         </tr>
                     </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
+                    <tbody className="bg-white divide-y divide-gray-200 print:divide-gray-300">
                         {items.map((item) => (
                             <React.Fragment key={item.id}>
-                                <tr className="hover:bg-gray-50 transition-colors border-b last:border-0">
-                                    <td className="px-4 py-3">
-                                        <div className="text-sm font-medium text-gray-900">{item.roleName}</div>
-                                        <div className="text-sm text-gray-500">{item.speakerName}</div>
+                                <tr className="hover:bg-gray-50 transition-colors border-b last:border-0 print:break-inside-avoid print:border-b-gray-300">
+                                    <td className="px-4 py-3 print:py-0.5 print:px-1">
+                                        <div className="text-sm font-medium text-gray-900 print:text-[9px] print:font-bold print:leading-tight">{item.roleName}</div>
+                                        <div className="text-sm text-gray-500 print:text-[8px] print:leading-none">{item.speakerName}</div>
                                     </td>
-                                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 hidden md:table-cell">
+                                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 hidden md:table-cell print:table-cell print:py-0.5 print:px-1 print:text-[9px] print:leading-tight">
                                         {item.targetTimeMinutes} min
                                     </td>
-                                    <td className="px-4 py-3 whitespace-nowrap text-sm font-mono font-medium text-tm-navy">
+                                    <td className="px-4 py-3 whitespace-nowrap text-sm font-mono font-medium text-tm-navy print:py-0.5 print:px-1 print:text-black print:text-[9px] print:leading-tight">
                                         {formatTime(item.actualTimeSeconds)}
                                     </td>
-                                    <td className="px-4 py-3 whitespace-nowrap">
+                                    <td className="px-4 py-3 whitespace-nowrap print:py-0.5 print:px-1">
                                         {getStatusBadge(item.status)}
                                     </td>
                                 </tr>
@@ -313,6 +385,11 @@ const ReportView: React.FC<ReportViewProps> = ({ items, onReset, scheduledStart,
                         ))}
                     </tbody>
                 </table>
+            </div>
+            
+            {/* Footer Quote */}
+            <div className="mt-8 text-center text-sm font-serif italic text-tm-navy opacity-80 border-t pt-4 print:mt-1 print:pt-1 print:text-[8px] print:border-t-0">
+                “Time is like our best meeting guest — when we respect it, everything runs smoothly.”
             </div>
         </div>
       </div>

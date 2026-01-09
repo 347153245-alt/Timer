@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState, useRef } from 'react';
 import { AgendaItem, TimingStatus } from '../types';
 import { getTimerConfig } from '../constants';
@@ -115,8 +116,18 @@ const TimerDisplay: React.FC<TimerDisplayProps> = ({ item, onComplete, onCancel 
 
   const confirmStopAction = () => {
     let status = TimingStatus.QUALIFIED;
-    if (elapsed > config.redTime + 30) status = TimingStatus.OVERTIME;
-    if (elapsed < config.greenTime) status = TimingStatus.UNDERTIME;
+    
+    // Status Logic:
+    // >= Bell Time (Red + 30s) -> Overtime
+    // < Green Time -> Undertime
+    // Else (Green, Yellow, Red) -> Qualified
+
+    if (elapsed >= config.bellTime) {
+        status = TimingStatus.OVERTIME;
+    } else if (elapsed < config.greenTime) {
+        status = TimingStatus.UNDERTIME;
+    }
+    
     onComplete(elapsed, status, logs);
   };
 

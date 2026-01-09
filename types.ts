@@ -2,7 +2,8 @@
 export enum RoleType {
   SPEECH = 'SPEECH',
   TABLE_TOPIC = 'TABLE_TOPIC',
-  OTHER = 'OTHER'
+  OTHER = 'OTHER',
+  SESSION = 'SESSION' // New type for aggregate sessions (e.g., Table Topics Session)
 }
 
 export enum TimingStatus {
@@ -22,6 +23,10 @@ export interface AgendaItem {
   status: TimingStatus;
   notes?: string;
   logs?: string[]; // Audit log for manual adjustments
+  
+  // For Inline Session Timer
+  isRunning?: boolean;
+  lastTick?: number; // Timestamp to calculate delta for inline timer
 }
 
 export interface TimerConfig {
@@ -29,4 +34,13 @@ export interface TimerConfig {
   yellowTime: number; // Seconds
   redTime: number; // Seconds
   bellTime: number; // Seconds
+}
+
+export interface SavedMeetingState {
+  timestamp: number;
+  items: AgendaItem[];
+  scheduledStart: string;
+  actualStart: string;
+  meetingNumber: string;
+  meetingTheme: string;
 }

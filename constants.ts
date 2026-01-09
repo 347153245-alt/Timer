@@ -1,3 +1,4 @@
+
 import { RoleType, TimerConfig } from './types';
 
 export const TM_COLORS = {
@@ -21,6 +22,15 @@ export const getTimerConfig = (type: RoleType, targetMinutes: number): TimerConf
       redTime: targetSeconds,
       bellTime: targetSeconds + 30
     };
+  } else if (type === RoleType.SESSION) {
+     // Session: Standard logic (Green @ 1 min remaining), but usually just tracks total time.
+     // We apply standard rules so the colors update.
+     return {
+      greenTime: targetSeconds - 60,
+      yellowTime: targetSeconds - 30,
+      redTime: targetSeconds,
+      bellTime: targetSeconds + 30
+    };
   } else {
     // All other roles (including Table Topics): Green @ 1 min remaining, Yellow @ 30s remaining
     return {
@@ -37,19 +47,24 @@ export const DEFAULT_AGENDA_ITEMS = [
   { roleName: 'Timer Introduction', type: RoleType.OTHER, targetTimeMinutes: 3 },
   { roleName: 'Grammarian Introduction', type: RoleType.OTHER, targetTimeMinutes: 3 },
   { roleName: 'General Evaluator Introduction', type: RoleType.OTHER, targetTimeMinutes: 3 },
-  { roleName: 'Speaker 1', type: RoleType.SPEECH, targetTimeMinutes: 7 },
-  { roleName: 'Speaker 2', type: RoleType.SPEECH, targetTimeMinutes: 7 },
-  { roleName: 'Speaker 3', type: RoleType.SPEECH, targetTimeMinutes: 7 },
+  { roleName: 'Guest Introduction & Icebreaking', type: RoleType.OTHER, targetTimeMinutes: 10 },
+  { roleName: 'Prepared Speech Speaker 1', type: RoleType.SPEECH, targetTimeMinutes: 7 },
+  { roleName: 'Prepared Speech Speaker 2', type: RoleType.SPEECH, targetTimeMinutes: 7 },
+  { roleName: 'Prepared Speech Speaker 3', type: RoleType.SPEECH, targetTimeMinutes: 7 },
   { roleName: 'Evaluator 1', type: RoleType.OTHER, targetTimeMinutes: 3 },
   { roleName: 'Evaluator 2', type: RoleType.OTHER, targetTimeMinutes: 3 },
   { roleName: 'Evaluator 3', type: RoleType.OTHER, targetTimeMinutes: 3 },
-  // Table Topics Session summary row removed as requested
+  // Table Topics Session (Overall)
+  { roleName: 'Table Topics Session', type: RoleType.SESSION, targetTimeMinutes: 30 },
+  // Table Topics Speakers
   { roleName: 'Table Topics Speaker 1', type: RoleType.TABLE_TOPIC, targetTimeMinutes: 2 },
   { roleName: 'Table Topics Speaker 2', type: RoleType.TABLE_TOPIC, targetTimeMinutes: 2 },
   { roleName: 'Table Topics Speaker 3', type: RoleType.TABLE_TOPIC, targetTimeMinutes: 2 },
   { roleName: 'Table Topics Speaker 4', type: RoleType.TABLE_TOPIC, targetTimeMinutes: 2 },
   { roleName: 'Table Topics Speaker 5', type: RoleType.TABLE_TOPIC, targetTimeMinutes: 2 },
-  { roleName: 'Table Topics Evaluation', type: RoleType.OTHER, targetTimeMinutes: 6 },
+  { roleName: 'Table Topics Speaker 6', type: RoleType.TABLE_TOPIC, targetTimeMinutes: 2 },
+  { roleName: 'Table Topics Speaker 7', type: RoleType.TABLE_TOPIC, targetTimeMinutes: 2 },
+  { roleName: 'Table Topics Evaluator', type: RoleType.OTHER, targetTimeMinutes: 6 },
   { roleName: 'Timer Report', type: RoleType.OTHER, targetTimeMinutes: 3 },
   { roleName: 'Grammarian Report', type: RoleType.OTHER, targetTimeMinutes: 3 },
   { roleName: 'General Evaluator Report', type: RoleType.OTHER, targetTimeMinutes: 10 },

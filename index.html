@@ -17,6 +17,16 @@
         --tm-yellow: #f2df74;
         --tm-grey: #a9b7b1;
       }
+      @media print {
+        @page {
+          size: A4;
+          margin: 10mm;
+        }
+        body {
+          -webkit-print-color-adjust: exact;
+          print-color-adjust: exact;
+        }
+      }
     </style>
     <script>
       tailwind.config = {
@@ -47,7 +57,7 @@
 }
 </script>
 </head>
-  <body class="bg-gray-50 text-slate-900 h-screen overflow-hidden">
-    <div id="root" class="h-full flex flex-col"></div>
+  <body class="bg-gray-50 text-slate-900 h-screen overflow-hidden print:h-auto print:overflow-visible">
+    <div id="root" class="h-full flex flex-col print:block"></div>
   </body>
 </html>
