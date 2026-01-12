@@ -53,9 +53,14 @@
       console.log("连接成功！数据如下：",JSON,stringify(data,null,2));
     }
   }
-
   testConnection();
 </script>
+        await supabase.from('timer_versions').insert({ ... });
+const { data } = await supabase
+  .from('timer_versions')
+  .select('*')
+  .order('created_at', { ascending: false })
+  .limit(5);
         body {
           -webkit-print-color-adjust: exact;
           print-color-adjust: exact;
