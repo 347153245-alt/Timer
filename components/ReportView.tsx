@@ -233,55 +233,55 @@ const ReportView: React.FC<ReportViewProps> = ({ items, onReset, scheduledStart,
         </div>
       </div>
 
-      <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-6 overflow-hidden flex-1 min-h-0 print:block print:overflow-visible print:h-auto">
+      <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-6 overflow-hidden flex-1 min-h-0 print:grid print:grid-cols-12 print:gap-4 print:overflow-visible print:h-auto">
         
-        {/* Left Stats Column (Hidden on Print) */}
-        <div className="lg:col-span-4 flex flex-col gap-4 overflow-y-auto print:hidden">
-            {/* ... (Keep existing stats components) ... */}
+        {/* Left Stats Column */}
+        <div className="lg:col-span-4 print:col-span-4 flex flex-col gap-4 overflow-y-auto print:overflow-visible print:gap-2">
             
             {/* Punctuality Card */}
-            <div className="bg-slate-50 p-4 rounded-lg border border-slate-100">
-                <div className="flex items-center gap-2 mb-2 text-tm-navy font-bold">
-                    <Clock className="w-5 h-5" /> Meeting Punctuality
+            <div className="bg-slate-50 p-4 rounded-lg border border-slate-100 print:p-2 print:border-gray-300 print:bg-transparent">
+                <div className="flex items-center gap-2 mb-2 text-tm-navy font-bold print:mb-1">
+                    <Clock className="w-5 h-5 print:w-3 print:h-3" /> 
+                    <span className="print:text-[10px]">Meeting Punctuality</span>
                 </div>
-                <div className={`text-2xl font-bold ${punctualityColor} mb-2`}>
+                <div className={`text-2xl font-bold ${punctualityColor} mb-2 print:mb-1 print:text-sm`}>
                     {punctualityStatus}
                 </div>
-                <div className="text-sm text-gray-500 flex justify-between">
-                    <span>Meeting Scheduled: {scheduledStart || '--:--'}</span>
-                    <span>Meeting Actual: {actualStart || '--:--'}</span>
+                <div className="text-sm text-gray-500 flex justify-between print:text-[8px] print:flex-col print:gap-0.5">
+                    <span>Sched: {scheduledStart || '--:--'}</span>
+                    <span>Actual: {actualStart || '--:--'}</span>
                 </div>
             </div>
 
             {/* Session Stats (Aggregated) */}
-            <div className="grid grid-cols-1 gap-4">
-                 <div className="bg-blue-50 p-4 rounded-lg">
+            <div className="grid grid-cols-1 gap-4 print:gap-1.5">
+                 <div className="bg-blue-50 p-4 rounded-lg print:p-1.5 print:border print:border-blue-100 print:bg-transparent">
                     <div className="flex justify-between items-end mb-1">
-                        <div className="text-xs text-tm-navy font-bold uppercase">Prepared Speeches & Evaluators</div>
-                        <div className={`text-xs font-bold ${preparedStats.diff > 60 ? 'text-red-500' : 'text-green-600'}`}>
+                        <div className="text-xs text-tm-navy font-bold uppercase print:text-[8px]">Speeches</div>
+                        <div className={`text-xs font-bold ${preparedStats.diff > 60 ? 'text-red-500' : 'text-green-600'} print:text-[8px]`}>
                             {preparedStats.diff > 0 ? '+' : ''}{formatTime(preparedStats.diff)}
                         </div>
                     </div>
-                    <div className="w-full bg-blue-200 h-2 rounded-full overflow-hidden">
+                    <div className="w-full bg-blue-200 h-2 rounded-full overflow-hidden print:h-1">
                         <div className="bg-tm-navy h-full" style={{ width: `${Math.min((preparedStats.actualSec / (preparedStats.targetSec || 1)) * 100, 100)}%` }}></div>
                     </div>
-                    <div className="text-xs text-gray-500 mt-1 flex justify-between">
+                    <div className="text-xs text-gray-500 mt-1 flex justify-between print:text-[7px]">
                         <span>Used: {formatTime(preparedStats.actualSec)}</span>
                         <span>Target: {formatTime(preparedStats.targetSec)}</span>
                     </div>
                  </div>
 
-                 <div className="bg-blue-50 p-4 rounded-lg">
+                 <div className="bg-blue-50 p-4 rounded-lg print:p-1.5 print:border print:border-blue-100 print:bg-transparent">
                     <div className="flex justify-between items-end mb-1">
-                        <div className="text-xs text-tm-navy font-bold uppercase">Table Topics Session</div>
-                        <div className={`text-xs font-bold ${ttStats.diff > 60 ? 'text-red-500' : 'text-green-600'}`}>
+                        <div className="text-xs text-tm-navy font-bold uppercase print:text-[8px]">Table Topics</div>
+                        <div className={`text-xs font-bold ${ttStats.diff > 60 ? 'text-red-500' : 'text-green-600'} print:text-[8px]`}>
                             {ttStats.diff > 0 ? '+' : ''}{formatTime(ttStats.diff)}
                         </div>
                     </div>
-                    <div className="w-full bg-blue-200 h-2 rounded-full overflow-hidden">
+                    <div className="w-full bg-blue-200 h-2 rounded-full overflow-hidden print:h-1">
                         <div className="bg-tm-navy h-full" style={{ width: `${Math.min((ttStats.actualSec / (ttStats.targetSec || 1)) * 100, 100)}%` }}></div>
                     </div>
-                    <div className="text-xs text-gray-500 mt-1 flex justify-between">
+                    <div className="text-xs text-gray-500 mt-1 flex justify-between print:text-[7px]">
                         <span>Used: {formatTime(ttStats.actualSec)}</span>
                         <span>Target: {formatTime(ttStats.targetSec)}</span>
                     </div>
@@ -289,17 +289,17 @@ const ReportView: React.FC<ReportViewProps> = ({ items, onReset, scheduledStart,
             </div>
 
             {/* Overall Chart */}
-            <div className="bg-white border p-4 rounded-lg flex flex-col items-center">
-                <h3 className="text-sm font-bold text-tm-navy mb-2 uppercase">Role Qualification Rate</h3>
-                <div className="w-full h-48 relative">
+            <div className="bg-white border p-4 rounded-lg flex flex-col items-center print:p-1 print:border-gray-200">
+                <h3 className="text-sm font-bold text-tm-navy mb-2 uppercase print:text-[9px] print:mb-0">Role Qualification</h3>
+                <div className="w-full h-48 relative print:h-24">
                     <ResponsiveContainer width="100%" height="100%">
                         <PieChart>
                             <Pie
                                 data={pieData}
                                 cx="50%"
                                 cy="50%"
-                                innerRadius={40}
-                                outerRadius={60}
+                                innerRadius="60%"
+                                outerRadius="80%"
                                 paddingAngle={5}
                                 dataKey="value"
                             >
@@ -308,31 +308,31 @@ const ReportView: React.FC<ReportViewProps> = ({ items, onReset, scheduledStart,
                                 ))}
                             </Pie>
                             <Tooltip />
-                            <Legend verticalAlign="bottom" height={36} iconSize={10} wrapperStyle={{fontSize: '10px'}}/>
+                            <Legend verticalAlign="bottom" height={36} iconSize={8} wrapperStyle={{fontSize: '9px'}}/>
                         </PieChart>
                     </ResponsiveContainer>
-                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none pb-8">
-                        <span className="text-xl font-bold text-gray-700">{overallRate}%</span>
+                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none pb-8 print:pb-4">
+                        <span className="text-xl font-bold text-gray-700 print:text-xs">{overallRate}%</span>
                     </div>
                 </div>
             </div>
 
             {/* Lateness Contributors */}
             {deviationItems.length > 0 && (
-                <div className="bg-red-50 p-4 rounded-lg border border-red-100">
-                    <h3 className="text-sm font-bold text-tm-burgundy mb-3 flex items-center gap-2">
-                        <AlertTriangle className="w-4 h-4" /> Significant Deviations
+                <div className="bg-red-50 p-4 rounded-lg border border-red-100 print:p-2 print:border-red-200 print:bg-transparent">
+                    <h3 className="text-sm font-bold text-tm-burgundy mb-3 flex items-center gap-2 print:mb-1 print:text-[9px]">
+                        <AlertTriangle className="w-4 h-4 print:w-3 print:h-3" /> Major Deviations
                     </h3>
-                    <ul className="space-y-3">
+                    <ul className="space-y-3 print:space-y-1">
                         {deviationItems.map((item, idx) => (
-                            <li key={idx} className="bg-white p-2 rounded shadow-sm">
+                            <li key={idx} className="bg-white p-2 rounded shadow-sm print:p-1 print:border print:border-gray-200 print:shadow-none">
                                 <div className="flex justify-between items-start">
-                                    <span className="text-sm font-bold text-gray-800 truncate block">{item.roleName}</span>
-                                    <span className="text-xs font-mono text-red-600 font-bold whitespace-nowrap ml-2">
-                                        Off by {formatTime(item.deviation)}
+                                    <span className="text-sm font-bold text-gray-800 truncate block print:text-[8px]">{item.roleName}</span>
+                                    <span className="text-xs font-mono text-red-600 font-bold whitespace-nowrap ml-2 print:text-[8px]">
+                                        +{formatTime(item.deviation)}
                                     </span>
                                 </div>
-                                <div className="text-xs text-gray-500 mt-1">
+                                <div className="text-xs text-gray-500 mt-1 print:hidden">
                                     Target: {item.targetTimeMinutes}m | Actual: {formatTime(item.actualTimeSeconds)}
                                 </div>
                             </li>
@@ -343,15 +343,8 @@ const ReportView: React.FC<ReportViewProps> = ({ items, onReset, scheduledStart,
         </div>
 
         {/* Right Details Column (Expands on Print) */}
-        <div className="lg:col-span-8 overflow-y-auto pr-2 print:col-span-12 print:overflow-visible print:pr-0">
+        <div className="lg:col-span-8 overflow-y-auto pr-2 print:col-span-8 print:overflow-visible print:pr-0">
             
-            {/* Print-only Stats Summary */}
-            <div className="hidden print:flex justify-between items-center mb-1 border border-gray-400 p-1 rounded text-[9px] bg-gray-50/50">
-                <div>Start: <b>{actualStart || 'N/A'}</b> (Sched: {scheduledStart})</div>
-                <div>Qualification: <b>{overallRate}%</b></div>
-                <div>{punctualityStatus}</div>
-            </div>
-
             <h3 className="text-lg font-semibold text-tm-navy mb-4 print:hidden">Detailed Results</h3>
             <div className="bg-white border rounded-lg overflow-hidden print:border-gray-400 print:rounded-none print:border-t print:border-l print:border-r">
                 <table className="min-w-full divide-y divide-gray-200 print:divide-gray-400">
