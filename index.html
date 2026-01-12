@@ -7,6 +7,13 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
       @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+      <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+  const supabase = supabase.createClient(
+  'https://ageayyncajkzzrvqeupm.supabase.co',
+    'process.env.SUPABASE_KEY'
+  )
+</script>
       body {
         font-family: 'Inter', sans-serif;
       }
