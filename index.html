@@ -40,6 +40,22 @@
         const supabaseKey = "process.env.SUPABASE_KEY";
         const supabase = supabase.createClient(supabaseUrl, supabaseKey);
 </script>
+        <script>
+  async function testConnection() {
+    const { data, error } = await supabase
+      .from('timer_versions')
+      .select('*')
+      .limit(1);
+
+    if (error) {
+      console.error("连接失败", error);
+    } else {
+      console.log("连接成功！测试数据：", data);
+    }
+  }
+
+  testConnection();
+</script>
         body {
           -webkit-print-color-adjust: exact;
           print-color-adjust: exact;
