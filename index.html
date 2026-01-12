@@ -22,6 +22,18 @@
           size: A4;
           margin: 10mm;
         }
+        <script>
+  function getDeviceId() {
+    let id = localStorage.getItem("timer_device_id");
+    if (!id) {
+      id = crypto.randomUUID();
+      localStorage.setItem("timer_device_id", id);
+    }
+    return id;
+  }
+
+  const DEVICE_ID = getDeviceId();
+</script>
         body {
           -webkit-print-color-adjust: exact;
           print-color-adjust: exact;
