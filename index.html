@@ -22,45 +22,6 @@
           size: A4;
           margin: 10mm;
         }
-        <script>
-  function getDeviceId() {
-    let id = localStorage.getItem("timer_device_id");
-    if (!id) {
-      id = crypto.randomUUID();
-      localStorage.setItem("timer_device_id", id);
-    }
-    return id;
-  }
-
-  const DEVICE_ID = getDeviceId();
-</script>
-        <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-        <script>
-        const supabaseUrl = "https://ageayyncajkzzrvqeupm.supabase.co";
-        const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFnZWF5eW5jYWprenpydnFldXBtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgyMTIwMTEsImV4cCI6MjA4Mzc4ODAxMX0.FeguY3AC3aG4FGOYc3DmFIBxncSNXfEQawbf8Fpfex0";
-        const supabase = supabase.createClient(supabaseUrl, supabaseKey);
-</script>
-        <script>
-  async function testConnection() {
-    const { data, error } = await supabase
-      .from('timer_versions')
-      .select('*')
-      .limit(1);
-
-    if (error) {
-      console.error("连接失败", error);
-    } else {
-      console.log("连接成功！数据如下：",JSON,stringify(data,null,2));
-    }
-  }
-  testConnection();
-</script>
-        await supabase.from('timer_versions').insert({ ... });
-const { data } = await supabase
-  .from('timer_versions')
-  .select('*')
-  .order('created_at', { ascending: false })
-  .limit(5);
         body {
           -webkit-print-color-adjust: exact;
           print-color-adjust: exact;
@@ -84,19 +45,82 @@ const { data } = await supabase
         }
       }
     </script>
-  <script type="importmap">
-{
-  "imports": {
-    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
-    "react/": "https://esm.sh/react@^19.2.3/",
-    "react": "https://esm.sh/react@^19.2.3",
-    "recharts": "https://esm.sh/recharts@^3.6.0",
-    "lucide-react": "https://esm.sh/lucide-react@^0.562.0"
-  }
-}
-</script>
-</head>
+    <script type="importmap">
+    {
+      "imports": {
+        "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+        "react/": "https://esm.sh/react@^19.2.3/",
+        "react": "https://esm.sh/react@^19.2.3",
+        "recharts": "https://esm.sh/recharts@^3.6.0",
+        "lucide-react": "https://esm.sh/lucide-react@^0.562.0"
+      }
+    }
+    </script>
+  </head>
   <body class="bg-gray-50 text-slate-900 h-screen overflow-hidden print:h-auto print:overflow-visible">
     <div id="root" class="h-full flex flex-col print:block"></div>
+
+    <!-- 添加按钮以调用保存和加载数据 -->
+    <div class="flex justify-center space-x-4 mt-8">
+      <button 
+        onclick="saveData()" 
+        class="px-6 py-3 bg-tm-burgundy text-white rounded-full hover:bg-tm-navy">
+        保存数据
+      </button>
+      <button 
+        onclick="loadData()" 
+        class="px-6 py-3 bg-tm-yellow text-tm-navy rounded-full hover:bg-tm-grey">
+        加载数据
+      </button>
+    </div>
+
+    <!-- 添加Supabase保存和读取数据的JS代码 -->
+    <script>
+      // 配置 Supabase
+      const SUPABASE_URL = "https://uvpztseftcdeqfwbbrrv.supabase.co"; 
+      const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV2cHp0c2VmdGNkZXFmd2JicnJ2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg3NDc3NTksImV4cCI6MjA4NDMyMzc1OX0.PKfl6x7OEVoLy9msdkq92DZ8-qXsWwzOVv_kaU-SWhQ"; 
+      const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+      // 保存数据到 Supabase
+      async function saveData() {
+        const dataToSave = {
+          role: "Timer", // 示例，替换成你的实际数据
+          target_time: 3, // 示例字段
+          actual_time: 3.1 // 示例字段
+        };
+
+        const { data, error } = await supabase
+          .from('timer_data')
+          .insert([
+            { data: JSON.stringify(dataToSave) }
+          ]);
+
+        if (error) {
+          console.error("保存失败", error);
+        } else {
+          console.log("保存成功", data);
+        }
+      }
+
+      // 从 Supabase 读取数据
+      async function loadData() {
+        const { data, error } = await supabase
+          .from('timer_data')
+          .select('data')
+          .order('id', { ascending: false })
+          .limit(1);
+
+        if (error) {
+          console.error("加载失败", error);
+        } else {
+          const loadedData = JSON.parse(data[0].data);
+          console.log("加载数据", loadedData);
+
+          // 你可以在这里用加载的数据填充页面的相关元素
+          // 比如：
+          // document.getElementById("timer").innerText = loadedData.target_time;
+        }
+      }
+    </script>
   </body>
 </html>
