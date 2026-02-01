@@ -1,8 +1,8 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { AgendaItem, RoleType, TimingStatus, SavedMeetingState } from '../types';
-import { Plus, Trash2, PlayCircle, ArrowUp, ArrowDown, Bell, Pencil, Save, Mic, RotateCcw, History, FolderOpen, X, Pause, Play } from 'lucide-react';
-import { DEFAULT_AGENDA_ITEMS, getTimerConfig } from '../constants';
+import { Plus, Trash2, PlayCircle, ArrowUp, ArrowDown, Bell, Pencil, Save, Mic, RotateCcw, History, FolderOpen, X, Pause, Play, FileX, RefreshCw } from 'lucide-react';
+import { getTimerConfig } from '../constants';
 
 interface AgendaSetupProps {
   items: AgendaItem[];
@@ -21,6 +21,8 @@ interface AgendaSetupProps {
   onSave: () => void;
   savedHistory: SavedMeetingState[];
   onRestore: (state: SavedMeetingState) => void;
+  onClearAll: () => void;
+  onResetToTemplate: () => void;
 }
 
 const AgendaSetup: React.FC<AgendaSetupProps> = ({ 
@@ -29,7 +31,8 @@ const AgendaSetup: React.FC<AgendaSetupProps> = ({
     actualStart, setActualStart,
     meetingNumber, setMeetingNumber,
     meetingTheme, setMeetingTheme,
-    onSave, savedHistory, onRestore
+    onSave, savedHistory, onRestore,
+    onClearAll, onResetToTemplate
 }) => {
   const [editingTimeId, setEditingTimeId] = useState<string | null>(null);
   const [showHistory, setShowHistory] = useState(false);
@@ -190,19 +193,11 @@ const AgendaSetup: React.FC<AgendaSetupProps> = ({
       setItems(newItems);
   }
 
-  const loadPreset = () => {
-    if (items.length > 0 && !window.confirm("This will replace your current agenda. Continue?")) {
+  const handleResetTemplate = () => {
+    if (items.length > 0 && !window.confirm("This will replace your current agenda with the default template. Continue?")) {
         return;
     }
-    const presetItems = DEFAULT_AGENDA_ITEMS.map(i => ({
-        ...i,
-        id: crypto.randomUUID(),
-        speakerName: '',
-        actualTimeSeconds: 0,
-        status: TimingStatus.PENDING,
-        isRunning: false
-    }));
-    setItems(presetItems);
+    onResetToTemplate();
   };
 
   const addNewAtTop = () => {
@@ -384,14 +379,22 @@ const AgendaSetup: React.FC<AgendaSetupProps> = ({
             </button>
             <div className="w-px h-8 bg-gray-300 mx-1"></div>
              <button 
-                onClick={loadPreset}
-                className="text-tm-navy border border-tm-navy px-3 py-2 rounded-lg text-sm font-semibold hover:bg-tm-light-grey whitespace-nowrap"
+                onClick={handleResetTemplate}
+                className="text-tm-navy border border-tm-navy px-3 py-2 rounded-lg text-sm font-semibold hover:bg-tm-light-grey whitespace-nowrap flex items-center gap-2"
+                title="Reset to Default Template"
             >
-                Template
+                <RefreshCw className="w-4 h-4" /> Template
+            </button>
+            <button 
+                onClick={onClearAll}
+                className="text-tm-burgundy border border-tm-burgundy px-3 py-2 rounded-lg text-sm font-semibold hover:bg-red-50 whitespace-nowrap flex items-center gap-2"
+                title="Clear all roles (Blank Agenda)"
+            >
+                <FileX className="w-4 h-4" /> Clear All
             </button>
             <button 
                 onClick={addNewAtTop}
-                className="flex items-center gap-2 bg-tm-navy text-white px-3 py-2 rounded-lg text-sm font-semibold hover:bg-opacity-90 whitespace-nowrap shadow-sm"
+                className="flex items-center gap-2 bg-tm-navy text-white px-3 py-2 rounded-lg text-sm font-semibold hover:bg-opacity-90 whitespace-nowrap shadow-sm ml-2"
             >
                 <Plus className="w-4 h-4" /> Add Role
             </button>
@@ -412,8 +415,26 @@ const AgendaSetup: React.FC<AgendaSetupProps> = ({
       {/* List */}
       <div className="flex-1 overflow-y-auto pb-64">
         {items.length === 0 ? (
-            <div className="text-center text-gray-400 py-12 border-2 border-dashed border-gray-200 rounded-xl mt-4">
-                No items. Load a template or add a role to start.
+            <div className="text-center py-12 border-2 border-dashed border-gray-200 rounded-xl mt-4 flex flex-col items-center justify-center gap-4">
+                <div className="p-4 bg-gray-50 rounded-full text-gray-300">
+                    <FileX className="w-12 h-12" />
+                </div>
+                <div className="text-gray-500 font-medium">The agenda is currently empty.</div>
+                <div className="flex gap-4">
+                    <button 
+                        onClick={onResetToTemplate}
+                        className="text-tm-navy text-sm font-bold hover:underline"
+                    >
+                        Load Template
+                    </button>
+                    <span className="text-gray-300">|</span>
+                    <button 
+                        onClick={addNewAtTop}
+                        className="text-tm-navy text-sm font-bold hover:underline"
+                    >
+                        Add New Role
+                    </button>
+                </div>
             </div>
         ) : (
             <div className="flex flex-col space-y-4">

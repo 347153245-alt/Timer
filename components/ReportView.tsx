@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { AgendaItem, TimingStatus, RoleType } from '../types';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
-import { Download, RefreshCw, AlertTriangle, Clock, Printer } from 'lucide-react';
+import { Download, RefreshCw, AlertTriangle, Clock, Printer, Activity } from 'lucide-react';
 import { TM_COLORS } from '../constants';
 
 interface ReportViewProps {
@@ -113,6 +113,34 @@ const ReportView: React.FC<ReportViewProps> = ({ items, onReset, scheduledStart,
     .sort((a, b) => b.deviation - a.deviation)
     .slice(0, 3);
 
+  // 5. Generate Analysis Text
+  const getAnalysisText = () => {
+    const lines = [];
+    
+    // Punctuality
+    if (meetingDelayMinutes > 5) {
+        lines.push("The meeting started later than scheduled. A prompt start is encouraged.");
+    } else {
+        lines.push("Great job starting the meeting on time!");
+    }
+
+    // Qualification
+    if (overallRate >= 80) {
+        lines.push("Time management was excellent today, with most speakers qualifying.");
+    } else if (overallRate >= 50) {
+        lines.push("Time management was fair, but there is room for improvement.");
+    } else {
+        lines.push("Many roles did not meet the time requirements. Please watch the signals closely.");
+    }
+
+    // Sessions
+    if (ttStats.diff > 120) {
+        lines.push("Table Topics session significantly exceeded the time limit.");
+    }
+
+    return lines;
+  };
+  const analysisLines = getAnalysisText();
 
   // --- Formatters ---
   const formatTime = (seconds: number) => {
@@ -228,7 +256,7 @@ const ReportView: React.FC<ReportViewProps> = ({ items, onReset, scheduledStart,
                 onClick={onReset}
                 className="flex items-center gap-2 bg-tm-navy text-white px-3 py-2 rounded-lg hover:bg-opacity-90 text-sm font-semibold transition-colors"
             >
-                <RefreshCw className="w-4 h-4" /> New
+                <RefreshCw className="w-4 h-4" /> Reset
             </button>
         </div>
       </div>
@@ -317,29 +345,24 @@ const ReportView: React.FC<ReportViewProps> = ({ items, onReset, scheduledStart,
                 </div>
             </div>
 
-            {/* Lateness Contributors */}
-            {deviationItems.length > 0 && (
-                <div className="bg-red-50 p-4 rounded-lg border border-red-100 print:p-2 print:border-red-200 print:bg-transparent">
-                    <h3 className="text-sm font-bold text-tm-burgundy mb-3 flex items-center gap-2 print:mb-1 print:text-[9px]">
-                        <AlertTriangle className="w-4 h-4 print:w-3 print:h-3" /> Major Deviations
-                    </h3>
-                    <ul className="space-y-3 print:space-y-1">
-                        {deviationItems.map((item, idx) => (
-                            <li key={idx} className="bg-white p-2 rounded shadow-sm print:p-1 print:border print:border-gray-200 print:shadow-none">
-                                <div className="flex justify-between items-start">
-                                    <span className="text-sm font-bold text-gray-800 truncate block print:text-[8px]">{item.roleName}</span>
-                                    <span className="text-xs font-mono text-red-600 font-bold whitespace-nowrap ml-2 print:text-[8px]">
-                                        +{formatTime(item.deviation)}
-                                    </span>
-                                </div>
-                                <div className="text-xs text-gray-500 mt-1 print:hidden">
-                                    Target: {item.targetTimeMinutes}m | Actual: {formatTime(item.actualTimeSeconds)}
-                                </div>
-                            </li>
-                        ))}
-                    </ul>
-                </div>
-            )}
+            {/* English Analysis Text */}
+            <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 print:p-2 print:bg-transparent print:border-gray-300">
+                 <h3 className="text-sm font-bold text-tm-navy mb-2 flex items-center gap-2 print:mb-1 print:text-[9px]">
+                    <Activity className="w-4 h-4 print:w-3 print:h-3" /> Timer's Analysis
+                 </h3>
+                 <ul className="list-disc list-inside space-y-1 text-sm text-gray-700 print:text-[8px] print:leading-tight">
+                    {analysisLines.map((line, idx) => (
+                        <li key={idx}>{line}</li>
+                    ))}
+                 </ul>
+            </div>
+
+             {/* Disclaimer */}
+            <div className="mt-auto pt-4 print:pt-2">
+                 <p className="text-xs text-gray-400 italic text-center print:text-[7px] print:leading-tight">
+                    *Only For Reference: This report is a record of time usage during the meeting and does not reflect the speaker's ability or speech quality.
+                 </p>
+            </div>
         </div>
 
         {/* Right Details Column (Expands on Print) */}

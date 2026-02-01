@@ -1,10 +1,11 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { AgendaItem, TimingStatus, SavedMeetingState } from './types';
+import { AgendaItem, TimingStatus, SavedMeetingState, RoleType } from './types';
 import AgendaSetup from './components/AgendaSetup';
 import TimerDisplay from './components/TimerDisplay';
 import ReportView from './components/ReportView';
 import { FileText, LayoutList } from 'lucide-react';
+import { DEFAULT_AGENDA_ITEMS } from './constants';
 
 // Branding Header
 const Header = () => (
@@ -52,6 +53,9 @@ const App: React.FC = () => {
         if (savedLatest) {
             const data: SavedMeetingState = JSON.parse(savedLatest);
             restoreState(data);
+        } else {
+            // Requirement: Default to Template if no data exists
+            loadTemplate();
         }
 
         // Load history list
@@ -61,8 +65,35 @@ const App: React.FC = () => {
         }
     } catch (e) {
         console.error("Failed to load saved data", e);
+        // Fallback to template on error
+        loadTemplate();
     }
   }, []);
+
+  // Requirement: Confirm before closing window
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+        if (items.length > 0) {
+            e.preventDefault();
+            e.returnValue = ''; // Chrome requires this to be set
+        }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [items]);
+
+  const loadTemplate = () => {
+      const presetItems = DEFAULT_AGENDA_ITEMS.map(i => ({
+        ...i,
+        id: crypto.randomUUID(),
+        speakerName: '',
+        actualTimeSeconds: 0,
+        status: TimingStatus.PENDING,
+        isRunning: false
+    }));
+    setItems(presetItems);
+  };
 
   const restoreState = (data: SavedMeetingState) => {
       setItems(data.items || []);
@@ -121,15 +152,15 @@ const App: React.FC = () => {
       setActiveItemIndex(null);
   };
 
-  const resetMeeting = () => {
-    if(window.confirm("Start a new meeting? All data will be cleared.")) {
+  // Requirement: Blank state via button with prompt
+  const clearAllData = () => {
+    if(window.confirm("WARNING: This will delete all agenda items and clear the screen. \n\nAre you sure? Data will be lost.")) {
         setItems([]);
         setActiveItemIndex(null);
         setAppView(AppView.AGENDA);
         setActualStart('');
         setMeetingNumber('');
         setMeetingTheme('');
-        // We do NOT clear storage here, ensuring accidental resets can be recovered via "History"
     }
   };
 
@@ -172,13 +203,15 @@ const App: React.FC = () => {
                     onSave={handleSaveData}
                     savedHistory={savedHistory}
                     onRestore={restoreState}
+                    onClearAll={clearAllData}
+                    onResetToTemplate={loadTemplate}
                 />
             )}
 
             {appView === AppView.REPORT && (
                 <ReportView 
                     items={items} 
-                    onReset={resetMeeting} 
+                    onReset={loadTemplate} 
                     scheduledStart={scheduledStart}
                     actualStart={actualStart}
                     meetingNumber={meetingNumber}
